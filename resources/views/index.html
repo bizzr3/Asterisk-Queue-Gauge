@@ -10,7 +10,51 @@
     <script src="js/angular.min.js"></script>
 
     <link rel="stylesheet" href="css/bootstrap.min.css">
+    <style type="text/css">
+        .circle-status {
+            width: 16px;
+            height: 16px;
+            border-radius: 15px;
+            float: left;
+            margin-right: 5px;
+            margin-top: 2px;
+        }
 
+        .status-busy {
+            background-color: #F30000;
+        }
+
+        .status-inuse {
+            background-color: #F89406;
+        }
+        .status-not-inuse {
+            background-color: #26A65B;
+        }
+
+        .status-unavail {
+            background-color: #D2D7D3;
+        }
+
+        .status-ringing {
+            background-color: #3498DB;
+        }
+
+        .blink {
+            animation: blink-animation 0.7s steps(5, start) infinite;
+            -webkit-animation: blink-animation 0.7s steps(5, start) infinite;
+        }
+        @keyframes blink-animation {
+            to {
+                visibility: hidden;
+            }
+        }
+        @-webkit-keyframes blink-animation {
+            to {
+                visibility: hidden;
+            }
+        }
+
+    </style>
     <script>
         var app = angular.module('queueMonitor', []);
 
@@ -18,6 +62,37 @@
             $scope.customersInQueue = 0;
             $scope.queueMembers = [];
             var socket = io();
+
+            $scope.getStatusCssClassByCode = function(status) {
+                var statusClass = '';
+                switch (status) {
+                    case '1': {
+                        statusClass = 'status-not-inuse';
+                        break;
+                    }
+                    case '2': {
+                        statusClass = 'status-inuse';
+                        break;
+                    }
+                    case '3': {
+                        statusClass = 'status-busy';
+                        break;
+                    }
+                    case '4': {
+                        statusClass = 'Unknown';
+                        break;
+                    }
+                    case '5': {
+                        statusClass = 'status-unavail';
+                        break;
+                    }
+                    case '6': {
+                        statusClass = 'status-ringing blink';
+                        break;
+                    }
+                }
+                return statusClass;
+            };
 
             $scope.getStatusTextByCode = function (status) {
                 var statusText = '';
@@ -232,7 +307,7 @@
                                 <td>{{ $index +1 }}</td>
                                 <td>{{ member.name }}</td>
                                 <td>{{ getExtensionFromLocationURI(member.location) }}</td>
-                                <td>{{ getStatusTextByCode(member.status) }}</td>
+                                <td><span class="circle-status {{ getStatusCssClassByCode(member.status) }}"></span>{{ getStatusTextByCode(member.status) }}</td>
                                 <td>{{ convertToDat(member.lastcall) }}</td>
                             </tr>
                         </tbody>
