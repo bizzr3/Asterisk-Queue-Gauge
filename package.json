@@ -1,0 +1,16 @@
+{
+  "name": "asterisk-queue-monitor",
+  "version": "0.0.1",
+  "private": "true",
+  "main": "queue.js",
+  "desciption": "Asterisk Queue monitoring tool",
+  "dependencies": {
+    "asterisk-manager": "0.1.15",
+    "bugsnag": "1.6.6",
+    "express": "^4.10.2",
+    "jquery": "^2.2.3",
+    "log4js": "0.6.29",
+    "request": "2.67.0",
+    "socket.io": "^1.4.6"
+  }
+}

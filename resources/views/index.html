@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="queueMonitor">
+<head>
+    <meta charset="UTF-8">
+    <title>Queue Monitor v0.1</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/highcharts.js"></script>
+    <script src="js/highcharts-more.js"></script>
+    <script src="js/angular.min.js"></script>
+
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+
+    <script>
+        var app = angular.module('queueMonitor', []);
+
+        app.controller('QueueController',['$scope', function($scope) {
+            $scope.customersInQueue = 0;
+            $scope.queueMembers = [];
+            var socket = io();
+
+            $scope.getStatusTextByCode = function (status) {
+                var statusText = '';
+                switch (status) {
+                    case '1': {
+                        statusText = 'Not in Use';
+                        break;
+                    }
+                    case '2': {
+                        statusText = 'In Use';
+                        break;
+                    }
+                    case '3': {
+                        statusText = 'Busy';
+                        break;
+                    }
+                    case '4': {
+                        statusText = 'Unknown';
+                        break;
+                    }
+                    case '5': {
+                        statusText = 'Unavailable';
+                        break;
+                    }
+                    case '6': {
+                        statusText = 'Ringing';
+                        break;
+                    }
+                }
+                return statusText;
+            };
+
+            $scope.getExtensionFromLocationURI = function (location) {
+                if (location === '') return '';
+
+                return location.split('@')[0].split('/')[1];
+
+            };
+
+            $scope.convertToDat = function(timestamp) {
+                var date = new Date(timestamp*1000);
+                var hours = date.getHours();
+                var minutes = "0" + date.getMinutes();
+                var seconds = "0" + date.getSeconds();
+                return hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
+            };
+
+
+            $scope.pushOrUpdate = function (data) {
+                if ($scope.queueMembers.length === 0) {
+                    $scope.$apply(function () {
+                        $scope.queueMembers.push(data);
+                    });
+                    return;
+                }
+
+                var itemUpdated = false;
+                var queuelen = $scope.queueMembers.length -1;
+                for (var i=0;i <= queuelen;i++) {
+                    if ($scope.queueMembers[i].location === data.location) {
+                        $scope.$apply(function () {
+                            $scope.queueMembers[i] = data;
+                        });
+                        itemUpdated = true;
+                        break;
+                    }
+                }
+
+                if(!itemUpdated) {
+                    $scope.$apply(function () {
+                        $scope.queueMembers.push(data);
+                    });
+                }
+            };
+
+            socket.on('queue.callers', function (data) {
+                $scope.customersInQueue = data;
+                $('#ph').text($scope.customersInQueue);
+                var point = $('#container').highcharts().series[0].points[0];
+
+                point.update(parseInt($scope.customersInQueue));
+            });
+
+            socket.on('queue.members', function(members) {
+                $scope.pushOrUpdate(members);
+                console.log($scope.queueMembers);
+            });
+
+            $('#container').highcharts({
+                chart: {
+                    type: 'gauge',
+                    plotBackgroundColor: null,
+                    plotBackgroundImage: null,
+                    plotBorderWidth: 0,
+                    plotShadow: false
+                },
+                credits: {
+                    enabled: false
+                },
+                title: {
+                    text: ''
+                },
+
+                pane: {
+                    startAngle: -150,
+                    endAngle: 150,
+                    background: [{
+                        backgroundColor: {
+                            linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                            stops: [
+                                [0, '#FFF'],
+                                [1, '#333']
+                            ]
+                        },
+                        borderWidth: 0,
+                        outerRadius: '109%'
+                    }, {
+                        backgroundColor: {
+                            linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                            stops: [
+                                [0, '#333'],
+                                [1, '#FFF']
+                            ]
+                        },
+                        borderWidth: 1,
+                        outerRadius: '107%'
+                    }, {
+                        // default background
+                    }, {
+                        backgroundColor: '#DDD',
+                        borderWidth: 0,
+                        outerRadius: '105%',
+                        innerRadius: '103%'
+                    }]
+                },
+
+                // the value axis
+                yAxis: {
+                    min: 0,
+                    max: 20,
+
+                    minorTickInterval: 'auto',
+                    minorTickWidth: 1,
+                    minorTickLength: 10,
+                    minorTickPosition: 'inside',
+                    minorTickColor: '#666',
+
+                    tickPixelInterval: 30,
+                    tickWidth: 2,
+                    tickPosition: 'inside',
+                    tickLength: 10,
+                    tickColor: '#666',
+                    labels: {
+                        step: 2,
+                        rotation: 'auto'
+                    },
+                    title: {
+                        text: 'Customers'
+                    },
+                    plotBands: [{
+                        from: 0,
+                        to: 2,
+                        color: '#55BF3B' // green
+                    }, {
+                        from: 2,
+                        to: 10,
+                        color: '#DDDF0D' // yellow
+                    }, {
+                        from: 10,
+                        to: 20,
+                        color: '#DF5353' // red
+                    }]
+                },
+
+                series: [{
+                    name: 'Count',
+                    data: [$scope.customersInQueue],
+                    tooltip: {
+                        valueSuffix: ' person'
+                    }
+                }]
+            });
+        }]);
+    </script>
+
+</head>
+<body>
+<div class="container" ng-controller="QueueController">
+    <div class="row">
+        &nbsp;
+    </div>
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Agents (ตัวแทน)</h3>
+                </div>
+                <div class="panel-body">
+                    <table class="table table-striped" id="agentTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Extension</th>
+                                <th>Status</th>
+                                <th>Last Call</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="member in queueMembers track by $index">
+                                {{ member }}
+                                <td>{{ $index +1 }}</td>
+                                <td>{{ member.name }}</td>
+                                <td>{{ getExtensionFromLocationURI(member.location) }}</td>
+                                <td>{{ getStatusTextByCode(member.status) }}</td>
+                                <td>{{ convertToDat(member.lastcall) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Customers (ลูกค้า)</h3>
+                </div>
+
+                <div class="panel-body">
+                    <div id="container" style="min-width: 410px; max-width: 500px; height: 410px; margin: 0 auto"></div>
+                    <p class="bg-success" style="padding: 10px;font-size:20px">Customers waiting in the queue&nbsp;(ลูกค้ากำลังรอคิว):&nbsp;<span id="ph"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
