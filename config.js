@@ -6,7 +6,7 @@ module.exports = {
         }
     },
     debuggable: true,
-    eventSendInterval: 3000,
+    eventSendInterval: 1000,
     asteriskConnection: {
         username: 'app',
         password: 'b@01038385',
