@@ -25,13 +25,26 @@ app.get('/', function(req, res){
     res.sendFile(__dirname + '/resources/views/index.html');
 });
 
+app.get('/out', function(req, res){
+    res.sendFile(__dirname + '/resources/views/outbounds.html');
+});
+
 //Start
 http.listen(3000, function(){
     console.log('listening on *:3000');
 });
 
+ami.on('extensionstatus', function (status) {
+    //logger('[CID]',status);
+});
+
 ami.on('queueparams', function (queueparams) {
     io.emit('queue.callers', queueparams.calls);
+    io.emit('queue.servicelevelperf', queueparams.servicelevelperf);
+});
+
+ami.on('queueentry', function (queueentery) {
+    io.emit('queue.income', {cid: queueentery.calleridnum, agent: queueentery.connectedlinenum });
 });
 
 ami.on('queuemember', function (summery) {
@@ -51,7 +64,7 @@ process.on('uncaughtException', function (error) {
 var checkQueueStatus = function () {
     ami.action({
       'action':'queuestatus',
-      'queue':'100',
+      'channel':'from-internal',
       'priority':1
     });
 

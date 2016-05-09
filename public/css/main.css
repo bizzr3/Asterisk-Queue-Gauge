@@ -1,0 +1,66 @@
+.circle-status {
+    width: 16px;
+    height: 16px;
+    border-radius: 15px;
+    float: left;
+    margin-right: 5px;
+    margin-top: 2px;
+}
+
+.status-busy {
+    background-color: #F30000;
+}
+
+.status-inuse {
+    background-color: #F89406;
+}
+
+.status-not-inuse {
+    background-color: #26A65B;
+}
+
+.status-unavail {
+    background-color: #D2D7D3;
+}
+
+.status-ringing {
+    background-color: #3498DB;
+}
+
+.status-waiting {
+    background-color: #d35400;
+}
+
+.status-holding {
+    background-color: #2c3e50;
+}
+
+.blink {
+    animation: blink-animation 0.7s steps(5, start) infinite;
+    -webkit-animation: blink-animation 0.7s steps(5, start) infinite;
+}
+
+@keyframes blink-animation {
+    to {
+        visibility: hidden;
+    }
+}
+
+@-webkit-keyframes blink-animation {
+    to {
+        visibility: hidden;
+    }
+}
+
+@media (min-width: 768px) {
+    .navbar {
+        border-radius: 0;
+    }
+}
+
+.panel-center {
+    width: 90%;
+    margin-top: 5px;
+    margin-left: 5%;
+    margin-right: 5%;
+}

@@ -2,284 +2,40 @@
 <html lang="en" ng-app="queueMonitor">
 <head>
     <meta charset="UTF-8">
-    <title>Queue Monitor v0.1</title>
+    <title>Queue Monitor v0.1 - Queue Metrics</title>
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/jquery.min.js"></script>
-    <script src="js/highcharts.js"></script>
-    <script src="js/highcharts-more.js"></script>
+
     <script src="js/angular.min.js"></script>
 
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts-more.js"></script>
+    <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+
+    <script src="js/main.js"></script>
+
     <link rel="stylesheet" href="css/bootstrap.min.css">
-    <style type="text/css">
-        .circle-status {
-            width: 16px;
-            height: 16px;
-            border-radius: 15px;
-            float: left;
-            margin-right: 5px;
-            margin-top: 2px;
-        }
-
-        .status-busy {
-            background-color: #F30000;
-        }
-
-        .status-inuse {
-            background-color: #F89406;
-        }
-        .status-not-inuse {
-            background-color: #26A65B;
-        }
-
-        .status-unavail {
-            background-color: #D2D7D3;
-        }
-
-        .status-ringing {
-            background-color: #3498DB;
-        }
-
-        .blink {
-            animation: blink-animation 0.7s steps(5, start) infinite;
-            -webkit-animation: blink-animation 0.7s steps(5, start) infinite;
-        }
-        @keyframes blink-animation {
-            to {
-                visibility: hidden;
-            }
-        }
-        @-webkit-keyframes blink-animation {
-            to {
-                visibility: hidden;
-            }
-        }
-
-    </style>
-    <script>
-        var app = angular.module('queueMonitor', []);
-
-        app.controller('QueueController',['$scope', function($scope) {
-            $scope.customersInQueue = 0;
-            $scope.queueMembers = [];
-            var socket = io();
-
-            $scope.getStatusCssClassByCode = function(status) {
-                var statusClass = '';
-                switch (status) {
-                    case '1': {
-                        statusClass = 'status-not-inuse';
-                        break;
-                    }
-                    case '2': {
-                        statusClass = 'status-inuse';
-                        break;
-                    }
-                    case '3': {
-                        statusClass = 'status-busy';
-                        break;
-                    }
-                    case '4': {
-                        statusClass = 'Unknown';
-                        break;
-                    }
-                    case '5': {
-                        statusClass = 'status-unavail';
-                        break;
-                    }
-                    case '6': {
-                        statusClass = 'status-ringing blink';
-                        break;
-                    }
-                }
-                return statusClass;
-            };
-
-            $scope.getStatusTextByCode = function (status) {
-                var statusText = '';
-                switch (status) {
-                    case '1': {
-                        statusText = 'Ready';
-                        break;
-                    }
-                    case '2': {
-                        statusText = 'Talking';
-                        break;
-                    }
-                    case '3': {
-                        statusText = 'Busy';
-                        break;
-                    }
-                    case '4': {
-                        statusText = 'Unknown';
-                        break;
-                    }
-                    case '5': {
-                        statusText = 'Away';
-                        break;
-                    }
-                    case '6': {
-                        statusText = 'Ringing';
-                        break;
-                    }
-                }
-                return statusText;
-            };
-
-            $scope.getExtensionFromLocationURI = function (location) {
-                if (location === '') return '';
-
-                return location.split('@')[0].split('/')[1];
-
-            };
-
-            $scope.convertToDat = function(timestamp) {
-                var date = new Date(timestamp*1000);
-                var hours = date.getHours();
-                var minutes = "0" + date.getMinutes();
-                var seconds = "0" + date.getSeconds();
-                return hours + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
-            };
-
-
-            $scope.pushOrUpdate = function (data) {
-                if ($scope.queueMembers.length === 0) {
-                    $scope.$apply(function () {
-                        $scope.queueMembers.push(data);
-                    });
-                    return;
-                }
-
-                var itemUpdated = false;
-                var queuelen = $scope.queueMembers.length -1;
-                for (var i=0;i <= queuelen;i++) {
-                    if ($scope.queueMembers[i].location === data.location) {
-                        $scope.$apply(function () {
-                            $scope.queueMembers[i] = data;
-                        });
-                        itemUpdated = true;
-                        break;
-                    }
-                }
-
-                if(!itemUpdated) {
-                    $scope.$apply(function () {
-                        $scope.queueMembers.push(data);
-                    });
-                }
-            };
-
-            socket.on('queue.callers', function (data) {
-                $scope.customersInQueue = data;
-                $('#ph').text($scope.customersInQueue);
-                var point = $('#container').highcharts().series[0].points[0];
-
-                point.update(parseInt($scope.customersInQueue));
-            });
-
-            socket.on('queue.members', function(members) {
-                $scope.pushOrUpdate(members);
-                console.log($scope.queueMembers);
-            });
-
-            $('#container').highcharts({
-                chart: {
-                    type: 'gauge',
-                    plotBackgroundColor: null,
-                    plotBackgroundImage: null,
-                    plotBorderWidth: 0,
-                    plotShadow: false
-                },
-                credits: {
-                    enabled: false
-                },
-                title: {
-                    text: ''
-                },
-
-                pane: {
-                    startAngle: -150,
-                    endAngle: 150,
-                    background: [{
-                        backgroundColor: {
-                            linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-                            stops: [
-                                [0, '#FFF'],
-                                [1, '#333']
-                            ]
-                        },
-                        borderWidth: 0,
-                        outerRadius: '109%'
-                    }, {
-                        backgroundColor: {
-                            linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-                            stops: [
-                                [0, '#333'],
-                                [1, '#FFF']
-                            ]
-                        },
-                        borderWidth: 1,
-                        outerRadius: '107%'
-                    }, {
-                        // default background
-                    }, {
-                        backgroundColor: '#DDD',
-                        borderWidth: 0,
-                        outerRadius: '105%',
-                        innerRadius: '103%'
-                    }]
-                },
-
-                // the value axis
-                yAxis: {
-                    min: 0,
-                    max: 20,
-
-                    minorTickInterval: 'auto',
-                    minorTickWidth: 1,
-                    minorTickLength: 10,
-                    minorTickPosition: 'inside',
-                    minorTickColor: '#666',
-
-                    tickPixelInterval: 30,
-                    tickWidth: 2,
-                    tickPosition: 'inside',
-                    tickLength: 10,
-                    tickColor: '#666',
-                    labels: {
-                        step: 2,
-                        rotation: 'auto'
-                    },
-                    title: {
-                        text: 'Customers'
-                    },
-                    plotBands: [{
-                        from: 0,
-                        to: 2,
-                        color: '#55BF3B' // green
-                    }, {
-                        from: 2,
-                        to: 10,
-                        color: '#DDDF0D' // yellow
-                    }, {
-                        from: 10,
-                        to: 20,
-                        color: '#DF5353' // red
-                    }]
-                },
-
-                series: [{
-                    name: 'Count',
-                    data: [$scope.customersInQueue],
-                    tooltip: {
-                        valueSuffix: ' person'
-                    }
-                }]
-            });
-        }]);
-    </script>
-
+    <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
+<nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                    data-target="#bs-example-navbar-collapse-9" aria-expanded="false"><span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span></button>
+            <a class="navbar-brand" href="#">Eagle Eye v0.1</a></div>
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-9">
+            <ul class="nav navbar-nav">
+                <li class="active"><a href="/">Inbound</a></li>
+                <li><a href="/out">Outbound</a></li>
+                <li><a href="/reports">Report</a></li>
+                <li><a href="/users">User Manager</a></li>
+                <li class="pull-right"><a href="/exit">Log out</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
 <div class="container" ng-controller="QueueController">
     <div class="row">
         &nbsp;
@@ -288,42 +44,89 @@
         <div class="col-lg-6">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">Agents (ตัวแทน)</h3>
+                    <h3 class="panel-title">Number of calls per agent</h3>
+                </div>
+
+                <div class="panel-body">
+                    <div id="callsperagent" style="height: 250px;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Customers in Queue: <span style="margin-top: 2px" id="ph"></span>
+                    </h3>
+                </div>
+
+                <div class="panel-body">
+                    <div id="queuecalls" style="width: 330px; height: 230px;margin-bottom: 20px"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2">
+            <div class="row">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Today Total Calls
+                        </h3>
+                    </div>
+
+                    <div class="panel-body">
+                        <h1 id="callsCount"
+                            style="font-size: 50px;text-align: center;margin-top:16px;color: #2980b9"></h1>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Performance
+                        </h3>
+                    </div>
+
+                    <div class="panel-body">
+                        <h1 id="performance_"
+                            style="font-size: 50px;text-align: center;margin-top:14px;color: #2980b9"></h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row" style="width: 104%">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Agents</h3>
                 </div>
                 <div class="panel-body">
                     <table class="table table-striped" id="agentTable">
                         <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Name</th>
-                                <th>Extension</th>
-                                <th>Status</th>
-                                <th>Last Call</th>
-                            </tr>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Extension</th>
+                            <th>Status</th>
+                            <th>Talking to</th>
+                            <th>Last Call</th>
+                            <th>Answered</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            <tr ng-repeat="member in queueMembers track by $index">
-                                {{ member }}
-                                <td>{{ $index +1 }}</td>
-                                <td>{{ member.name }}</td>
-                                <td>{{ getExtensionFromLocationURI(member.location) }}</td>
-                                <td><span class="circle-status {{ getStatusCssClassByCode(member.status) }}"></span>{{ getStatusTextByCode(member.status) }}</td>
-                                <td>{{ convertToDat(member.lastcall) }}</td>
-                            </tr>
+                        <tr ng-repeat="member in queueMembers track by $index">
+                            <td>{{ $index +1 }}</td>
+                            <td>{{ member.name }}</td>
+                            <td>{{ getExtensionFromLocationURI(member.location) }}</td>
+                            <td>
+                                <span class="circle-status {{ getStatusCssClassByCode(member.status) }}"></span>
+                                {{ getStatusTextByCode(member.status) }}
+                            </td>
+                            <td>{{ member.customerCid }}</td>
+                            <td>{{ convertToDat(member.lastcall) }}</td>
+                            <td>{{ member.callstaken }}</td>
+                        </tr>
                         </tbody>
                     </table>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">Customers (ลูกค้า)</h3>
-                </div>
-
-                <div class="panel-body">
-                    <div id="container" style="min-width: 410px; max-width: 500px; height: 410px; margin: 0 auto"></div>
-                    <p class="bg-success" style="padding: 10px;font-size:20px">Customers waiting in the queue&nbsp;(ลูกค้ากำลังรอคิว):&nbsp;<span id="ph"></span></p>
                 </div>
             </div>
         </div>

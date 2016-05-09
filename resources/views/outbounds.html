@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="queueMonitor">
+<head>
+    <meta charset="UTF-8">
+    <title>Queue Monitor v0.1 - Outbound Calls</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/jquery.min.js"></script>
+
+    <script src="js/angular.min.js"></script>
+
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts-more.js"></script>
+    <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+
+    <script src="js/main.js"></script>
+
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<nav class="navbar navbar-inverse">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                    data-target="#bs-example-navbar-collapse-9" aria-expanded="false"><span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span></button>
+            <a class="navbar-brand" href="#">Eagle Eye v0.1</a></div>
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-9">
+            <ul class="nav navbar-nav">
+                <li><a href="/">Inbound</a></li>
+                <li class="active"><a href="/out">Outbound</a></li>
+                <li><a href="/reports">Report</a></li>
+                <li><a href="/users">User Manager</a></li>
+                <li class="pull-right"><a href="/exit">Log out</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<div class="row">
+    <div class="col-lg-11 panel-center">
+        <div class="panel panel-success">
+            <div class="panel-heading">Panel heading without title</div>
+            <div class="panel-body">
+                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. A autem blanditiis ducimus eius enim
+                    eveniet, ex labore molestiae molestias non officia omnis quibusdam suscipit totam, voluptas
+                    voluptatibus voluptatum! Facilis, similique.</p>
+            </div>
+
+            <!-- Table -->
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Extension</th>
+                    <th>Status</th>
+                    <th>Talking to</th>
+                    <th>Last Call</th>
+                    <th>Answered</th>
+                </tr>
+                </thead>
+                <tbody>
+                    <tr  class="active">
+                        <td>...</td>
+                        <td>...</td>
+                        <td>...</td>
+                        <td>...</td>
+                        <td>...</td>
+                        <td>...</td>
+                        <td>...</td>
+                    </tr>
+
+            </table>
+
+        </div>
+    </div>
+</div>
+
+
+</body>
