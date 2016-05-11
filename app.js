@@ -34,8 +34,8 @@ http.listen(3000, function(){
     console.log('listening on *:3000');
 });
 
-ami.on('extensionstatus', function (status) {
-    //logger('[CID]',status);
+ami.on('peerentry', function (status) {
+    logger('[CID]',status);
 });
 
 ami.on('queueparams', function (queueparams) {
@@ -66,6 +66,16 @@ var checkQueueStatus = function () {
       'action':'queuestatus',
       'channel':'from-internal',
       'priority':1
+    });
+
+    ami.action({
+      'action':'getconfig',
+      'priority':1,
+      'variables' : {
+         'filename': 'extensions_custom.conf'
+      }
+    }, function (res) {
+        logger('[Peerlist]',res);
     });
 
     setTimeout(checkQueueStatus, rabbit.eventSendInterval);
