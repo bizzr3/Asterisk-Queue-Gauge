@@ -1,17 +1,20 @@
 'use strict';
 
-var rabbit = require('./config');
-var ami = new require('asterisk-manager')(
-    rabbit.asteriskConnection.port,
-    rabbit.asteriskConnection.ip_address,
-    rabbit.asteriskConnection.username,
-    rabbit.asteriskConnection.password, true);
+require('./config');
+var mailFactory = require('./app/services/email');
+var logger = require('./app/utils/logger');
+var queue = require('./app/utils/queue');
+var AST_TAG = '[ASTERISK]';
 
-var request = require('request');
-var log4js = require('log4js');
-var logForJS = log4js.getLogger();
+var ami = new require('asterisk-manager')(
+    global.asteriskConnection.port,
+    !global.devMode ? global.asteriskConnection.ip_address
+    : global.asteriskConnection.debug_ip_address,
+    global.asteriskConnection.username,
+    global.asteriskConnection.password, true);
 
 ami.keepConnected();
+
 var express = require('express');
 var app = express();
 var http = require('http').Server(app);
@@ -19,80 +22,76 @@ var io = require('socket.io')(http);
 
 app.use(express.static('public'));
 
-
 // Routes:
-app.get('/', function(req, res){
+app.get('/', function (req, res) {
     res.sendFile(__dirname + '/resources/views/index.html');
 });
 
-app.get('/out', function(req, res){
+app.get('/out', function (req, res) {
     res.sendFile(__dirname + '/resources/views/outbounds.html');
 });
 
 //Start
-http.listen(3000, function(){
-    console.log('listening on *:3000');
+http.listen(global.http_port, function () {
+    console.log('listening on *:' + global.http_port);
 });
 
 ami.on('peerentry', function (status) {
-    logger('[CID]',status);
+    logger.log('[CID]', status);
 });
 
 ami.on('queueparams', function (queueparams) {
-    io.emit('queue.callers', queueparams.calls);
-    io.emit('queue.servicelevelperf', queueparams.servicelevelperf);
+    try {
+        io.emit('queue.callers', queueparams.calls);
+        io.emit('queue.servicelevelperf', queueparams.servicelevelperf);
+    } catch(error) {
+        logger.log(AST_TAG, error.stack(), 'fatal');
+    }
+    queue.updateQueuePerformace(queueparams.servicelevelperf);
 });
 
 ami.on('queueentry', function (queueentery) {
-    io.emit('queue.income', {cid: queueentery.calleridnum, agent: queueentery.connectedlinenum });
+    try{
+        io.emit('queue.income', {cid: queueentery.calleridnum, agent: queueentery.connectedlinenum});
+    } catch(error) {
+        logger.log(AST_TAG, error.stack(), 'fatal');
+    }
+
 });
 
-ami.on('queuemember', function (summery) {
-    io.emit('queue.members', summery);
+ami.on('queuemember', function (agent) {
+    queue.updateAgentsList(agent);
+    try{
+        io.emit('queue.members', agent);
+    } catch(error) {
+        logger.log(AST_TAG, error.stack(), 'fatal');
+    }
+
 });
 
 ami.on('connect', function () {
-    logger('[CONNECTED]','Connection to asterisk has been established.');
+    logger.log(AST_TAG, 'Connection to asterisk (' + ami.options.host + ') has been established.');
 });
 
-//Every one second we should post event object to NANA.
 process.on('uncaughtException', function (error) {
-    console.log(error.stack);
-    process.exit();
+    logger.log('[FAILURE]', error.stack, 'fatal');
+});
+
+io.sockets.on('connection', function(socket) {
+    socket.on('report.send', function() {
+        mailFactory.sendMetricEmail();
+        io.emit('report.sent',JSON.stringify({status: 200, message: 'Report sent via email.'}));
+    });
 });
 
 var checkQueueStatus = function () {
     ami.action({
-      'action':'queuestatus',
-      'channel':'from-internal',
-      'priority':1
+        'action': 'queuestatus',
+        'channel': 'from-internal',
+        'priority': 1
     });
 
-    ami.action({
-      'action':'getconfig',
-      'priority':1,
-      'variables' : {
-         'filename': 'extensions_custom.conf'
-      }
-    }, function (res) {
-        logger('[Peerlist]',res);
-    });
-
-    setTimeout(checkQueueStatus, rabbit.eventSendInterval);
+    setTimeout(checkQueueStatus, global.eventSendInterval);
 };
 
 checkQueueStatus();
-
-var logger = function (title, log, type) {
-    if (!rabbit.debuggable) {
-        return;
-    }
-
-    if (type === '' || type === undefined) {
-        logForJS.info(title, typeof log === 'undefined' ? '' : log);
-        
-        return;
-    }
-
-    logForJS[type](title, typeof log === 'undefined' ? '' : log);
-};

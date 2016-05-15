@@ -173,6 +173,14 @@ app.controller('QueueController', ['$scope', function ($scope) {
         }
     };
 
+    $scope.sendReportEmail = function () {
+        socket.emit('report.send');
+    };
+
+    socket.on('report.sent', function(data){
+        alert('SENT');
+    });
+
     socket.on('queue.callers', function (data) {
         $scope.customersInQueue = data;
         $('#ph').text($scope.customersInQueue);
