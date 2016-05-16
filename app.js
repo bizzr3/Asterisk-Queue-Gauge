@@ -5,6 +5,7 @@ var mailFactory = require('./app/services/email');
 var logger = require('./app/utils/logger');
 var queue = require('./app/utils/queue');
 var AST_TAG = '[ASTERISK]';
+//var CronJob = require('cron').CronJob;
 
 var ami = new require('asterisk-manager')(
     global.asteriskConnection.port,
