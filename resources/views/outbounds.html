@@ -40,7 +40,8 @@
     <div class="col-lg-11">
         <div class="row agent-tile-holder">
             <div class="agent-tile {{ peer.extension }}" list-index="{{$index}}"
-                 ng-show="printFilters(peer.name) && peer.status != 'UNKNOWN' && peer.status != 'UNREACHABLE'"
+                 ng-show="printFilters(peer.name) && peer.status != 'UNKNOWN' && peer.status != 'UNREACHABLE'
+                 && peer.extension != '2032' && peer.extension != '2031' && peer.extension != '2010'"
                  ng-repeat="peer in peerslist track by $index">
                 <h6>
                     <i style="margin-top: -2px" ng-show="peer.status == 'In a call'"
