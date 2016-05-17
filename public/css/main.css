@@ -59,8 +59,37 @@
 }
 
 .panel-center {
-    width: 90%;
     margin-top: 5px;
-    margin-left: 5%;
-    margin-right: 5%;
+    margin-left: 1%;
+    margin-right: 1%;
+}
+
+.agent-tile {
+    width: 210px;
+    height: 150px;
+    border: 1px solid #BDC3C7;
+    background-color: #EEEEEE;
+    float: left;
+    margin-right: 5px;
+    margin-left: 0;
+    margin-top: 5px;
+    padding: 5px;
+}
+
+.agent-tile-holder {
+    margin-top: 1px;
+    margin-left: 1%;
+    margin-right: 1%
+}
+
+.agent-info-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 12px;
+}
+
+.agent-info-list li {
+    float: left;
+    margin-right: 5px
 }

@@ -1,5 +1,149 @@
 var app = angular.module('queueMonitor', []);
 
+
+app.controller('outBoundController', ['$scope', '$filter', function ($scope, $filter) {
+    $scope.peerslist = [];
+    $scope.trunks = [];
+    $scope.peersTotalStatus = [];
+    $scope.todayMissedCalls = 0;
+    $scope.todayAnsweredCalls = 0;
+    $scope.todayNoAnsweredCalls = 0;
+    $scope.todayFailedCalls = 0;
+    $scope.todayBusyCalls = 0;
+    $scope.activeCalls = 0;
+
+    var socket = io();
+
+    socket.emit('peers.getList');
+
+    socket.on('peer.statusChanged', function (data) {
+        $scope.updatePeer(data)
+    });
+
+    socket.on('peers.list', function (data) {
+        $scope.$apply(function () {
+            $scope.peerslist = data;
+        });
+    });
+
+    socket.on('peers.totalStats', function (data) {
+        $scope.$apply(function () {
+            $scope.peersTotalStatus = data;
+            $scope.todayAnsweredCalls = 0;
+            $scope.todayNoAnsweredCalls = 0;
+            $scope.todayFailedCalls = 0;
+            $scope.todayBusyCalls = 0;
+
+            $scope.peersTotalStatus.filter(function (obj, index) {
+                if (/ANSWERED/.test(obj.disposition)) {
+                    $scope.todayAnsweredCalls++;
+                } else if (/NO ANSWER/.test(obj.disposition)) {
+                    $scope.todayNoAnsweredCalls++;
+                } else if (/FAILED/.test(obj.disposition)) {
+                    $scope.todayFailedCalls++;
+                } else if (/BUSY/.test(obj.disposition)) {
+                    $scope.todayBusyCalls++;
+                }
+            });
+            $scope.peerslist.filter(function (obj, index) {
+                var totalCalls = 0, totaltalk = 0,noanswered = 0 ,answered = 0, busy = 0, failed = 0;
+
+                var agentItems = $filter('filter')($scope.peersTotalStatus, {src: obj.extension});
+                totalCalls = agentItems.length;
+
+                agentItems.forEach(function (item) {
+                    /ANSWERED/.test(item.disposition) && (answered +=1);
+                    /NO ANSWER/.test(item.disposition) && (noanswered +=1);
+                    /BUSY/.test(item.disposition) && (busy +=1);
+                    /FAILED/.test(item.disposition) && (failed +=1);
+                });
+
+                $scope.peerslist[index].total_calls = totalCalls;
+                $scope.peerslist[index].answered_calls = answered;
+                $scope.peerslist[index].no_answered_calls = noanswered;
+                $scope.peerslist[index].failed_calls = failed;
+                $scope.peerslist[index].busy_calls = busy;
+                $scope.peerslist[index].response_rate = totalCalls / answered;
+            });
+        });
+    });
+
+    $scope.printFilters = function (value) {
+        if (/^\d+$/.test(value))  return false;
+        if (/Voicemail/.test(value))  return false;
+        return true;
+    };
+
+    $scope.getProgressColorClass = function(value) {
+        if (value < 10) {
+           return 'progress-bar-danger';
+        } else if (value > 10 && value < 40) {
+            return 'progress-bar-warning';
+        } else  if (value > 40 && value < 70) {
+            return 'progress-bar-info';
+        } else  if (value > 70) {
+            return 'progress-bar-success';
+        }
+    };
+
+    $scope.updatePeer = function (itemToUpdate) {
+        $scope.activeCalls = $('.blink').length - $('.blink.ng-hide').length;
+        if (!Array.isArray(itemToUpdate)) {
+            $scope.peerslist.filter(function (obj, index) {
+                if (itemToUpdate.channel.indexOf(obj.extension) >= 0) {
+                    $scope.$apply(function () {
+                        switch (itemToUpdate.subevent) {
+                            case 'Begin':
+                            {
+                                $scope.peerslist[index].status = 'In a call';
+                                $scope.peerslist[index].destination = itemToUpdate.connectedlinenum;
+                                clearInterval(angular.element('#' + $scope.peerslist[index].extension).attr('timerID'));
+                                $scope.showTimer(angular.element('#' + $scope.peerslist[index].extension));
+                                break;
+                            }
+                            case 'End':
+                            {
+                                $scope.peerslist[index].status = '';
+                                $scope.peerslist[index].destination = '';
+                                var timerElement = angular.element('#' + $scope.peerslist[index].extension);
+                                timerElement.text('');
+                                clearInterval(timerElement.attr('timerID'));
+                                break;
+                            }
+                        }
+
+                    });
+                }
+            });
+        } else {
+            $scope.peerslist.filter(function (obj, index) {
+                $scope.$apply(function () {
+                    if (!/OK/.test(itemToUpdate[index].status)) {
+                        $scope.peerslist[$('.' + itemToUpdate[index].objectname).attr('list-index')].status = itemToUpdate[index].status;
+                    }
+                });
+            });
+        }
+    };
+
+    $scope.showTimer = function (target) {
+        var timer = 1;
+        var minutes, seconds;
+
+        var timerId = setInterval(function () {
+            minutes = parseInt(timer / 60, 10);
+            seconds = parseInt(timer % 60, 10);
+
+            minutes = minutes < 10 ? "0" + minutes : minutes;
+            seconds = seconds < 10 ? "0" + seconds : seconds;
+
+            timer++;
+            target.text(minutes + ":" + seconds);
+        }, 1000);
+        target.attr('timerID', timerId);
+    };
+}]);
+
 app.controller('QueueController', ['$scope', function ($scope) {
     $scope.customersInQueue = 0;
     $scope.QueuePerformace = 0;
@@ -126,7 +270,7 @@ app.controller('QueueController', ['$scope', function ($scope) {
     };
 
     $scope.pushOrUpdateCID = function (queueEntry) {
-        for (var i = 0; i <= $scope.queueMembers.length -1 ; i++) {
+        for (var i = 0; i <= $scope.queueMembers.length - 1; i++) {
             if ($scope.queueMembers[i].location.indexOf(queueEntry.agent) > 0) {
                 if ($scope.queueMembers[i].status !== '2') {
                     $scope.$apply(function () {
@@ -177,7 +321,11 @@ app.controller('QueueController', ['$scope', function ($scope) {
         socket.emit('report.send');
     };
 
-    socket.on('report.sent', function(data){
+    socket.on('peer.statusChanged', function (newStatus) {
+
+    });
+
+    socket.on('report.sent', function (data) {
         alert('SENT');
     });
 

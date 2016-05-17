@@ -6,6 +6,7 @@ var logger = require('./app/utils/logger');
 var queue = require('./app/utils/queue');
 var AST_TAG = '[ASTERISK]';
 //var CronJob = require('cron').CronJob;
+var mysql = require('mysql');
 
 var ami = new require('asterisk-manager')(
     global.asteriskConnection.port,
@@ -13,6 +14,7 @@ var ami = new require('asterisk-manager')(
     : global.asteriskConnection.debug_ip_address,
     global.asteriskConnection.username,
     global.asteriskConnection.password, true);
+
 
 ami.keepConnected();
 
@@ -37,8 +39,26 @@ http.listen(global.http_port, function () {
     console.log('listening on *:' + global.http_port);
 });
 
-ami.on('peerentry', function (status) {
-    logger.log('[CID]', status);
+var peerListTemp = [];
+ami.on('peerlistcomplete', function (status) {
+    global.peers = peerListTemp;
+    peerListTemp = [];
+    io.emit('peer.statusChanged', global.peers);
+});
+
+ami.on('dial', function(dial) {
+    if (/Begin|End/.test(dial.subevent)) {
+        io.emit('peer.statusChanged', dial);
+    }
+});
+
+ami.on('peerentry', function (peersStatus) {
+    peerListTemp.push(peersStatus);
+});
+
+
+ami.on('peerstatus', function (peersStatus) {
+    //console.log(peersStatus);
 });
 
 ami.on('queueparams', function (queueparams) {
@@ -57,7 +77,6 @@ ami.on('queueentry', function (queueentery) {
     } catch(error) {
         logger.log(AST_TAG, error.stack(), 'fatal');
     }
-
 });
 
 ami.on('queuemember', function (agent) {
@@ -67,7 +86,6 @@ ami.on('queuemember', function (agent) {
     } catch(error) {
         logger.log(AST_TAG, error.stack(), 'fatal');
     }
-
 });
 
 ami.on('connect', function () {
@@ -83,6 +101,34 @@ io.sockets.on('connection', function(socket) {
         mailFactory.sendMetricEmail();
         io.emit('report.sent',JSON.stringify({status: 200, message: 'Report sent via email.'}));
     });
+
+    socket.on('peers.getList', function() {
+        var databaseConnection = mysql.createConnection({
+            host: '127.0.0.1',
+            user: 'asteriskuser',
+            password: 'amp109',
+            database: 'asterisk'
+        });
+
+        databaseConnection.connect(function (err) {
+            if (err) return;
+
+            databaseConnection.query("SELECT * FROM users", function (error, users) {
+                io.emit('peers.list', users);
+            });
+        });
+    });
+});
+
+var cdrDatabaseConnection = mysql.createConnection({
+    host: '127.0.0.1',
+    user: 'asteriskuser',
+    password: 'amp109',
+    database: 'asteriskcdrdb'
+});
+
+cdrDatabaseConnection.connect(function (err) {
+    if (err) console.log(err.stack);
 });
 
 var checkQueueStatus = function () {
@@ -90,6 +136,16 @@ var checkQueueStatus = function () {
         'action': 'queuestatus',
         'channel': 'from-internal',
         'priority': 1
+    });
+
+    ami.action({
+        'action': 'sippeers',
+        'priority': 1
+    });
+
+    cdrDatabaseConnection.query("select * from cdr WHERE calldate >= CURDATE()  AND (dcontext = 'from-internal') order by billsec DESC;", function (error, totalstats) {
+        if(error) console.log(error.stack);
+        io.emit('peers.totalStats', totalstats);
     });
 
     setTimeout(checkQueueStatus, global.eventSendInterval);

@@ -36,45 +36,90 @@
         </div>
     </div>
 </nav>
-<div class="row">
-    <div class="col-lg-11 panel-center">
-        <div class="panel panel-success">
-            <div class="panel-heading">Panel heading without title</div>
-            <div class="panel-body">
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. A autem blanditiis ducimus eius enim
-                    eveniet, ex labore molestiae molestias non officia omnis quibusdam suscipit totam, voluptas
-                    voluptatibus voluptatum! Facilis, similique.</p>
+<div class="row" ng-controller="outBoundController">
+    <div class="col-lg-11">
+        <div class="row agent-tile-holder">
+            <div class="agent-tile {{ peer.extension }}" list-index="{{$index}}"
+                 ng-show="printFilters(peer.name) && peer.status != 'UNKNOWN' && peer.status != 'UNREACHABLE'"
+                 ng-repeat="peer in peerslist track by $index">
+                <h6>
+                    <i style="margin-top: -2px" ng-show="peer.status == 'In a call'"
+                       class="circle-status status-ringing blink"></i>
+                    <i style="margin-top: -2px" ng-show="peer.status != 'UNKNOWN' && peer.status != 'In a call'"
+                       class="circle-status status-not-inuse"></i>
+                    <i style="margin-top: -2px" ng-show="peer.status == 'UNKNOWN'"
+                       class="circle-status status-unavail"></i>
+                    <span style="font-size: 10px">{{ peer.name + ' (' + peer.extension + ')' }}</span>
+                </h6>
+                <h4></h4>
+                <h6>Status: {{ peer.status.length ? peer.status + ' (' + peer.destination + ') ' : 'Idle'}} <span
+                        id="{{ peer.extension }}"></span></h6>
+
+                <div style="font-size:13px;">
+                    <div class="pull-left">Rate:</div>
+                    <div class="progress pull-left"
+                         style="height: 10px;width:100px;margin-top:5px;margin-left:5px;margin-right:5px">
+                        <div class="progress-bar {{ getProgressColorClass(peer.response_rate) }}" role="progressbar"
+                             aria-valuenow="{{ peer.response_rate }}"
+                             aria-valuemin="0" aria-valuemax="100" style="width:{{ peer.response_rate }}%">
+                        </div>
+                    </div>
+                    <div style="font-size: 12px;padding-top: 4px;"><b>{{peer.response_rate | number:2}}%</b></div>
+                </div>
+                <br>
+                <ul class="agent-info-list">
+                    <li>Total: <b>{{ peer.total_calls }}</b>&nbsp;|</li>
+                    <li>Answered:<b>{{ peer.no_answered_calls }}</b>&nbsp;|</li>
+                    <li>No Answer:<b>{{ peer.answered_calls }}</b>&nbsp;|</li>
+                    <li>Failed: <b>{{ peer.failed_calls }}</b>&nbsp;|</li>
+                    <li>Busy: <b>{{ peer.busy_calls }}</b></li>
+                </ul>
             </div>
-
-            <!-- Table -->
-            <table class="table">
-                <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Name</th>
-                    <th>Extension</th>
-                    <th>Status</th>
-                    <th>Talking to</th>
-                    <th>Last Call</th>
-                    <th>Answered</th>
-                </tr>
-                </thead>
-                <tbody>
-                    <tr  class="active">
-                        <td>...</td>
-                        <td>...</td>
-                        <td>...</td>
-                        <td>...</td>
-                        <td>...</td>
-                        <td>...</td>
-                        <td>...</td>
-                    </tr>
-
-            </table>
-
+        </div>
+    </div>
+    <div class="col-lg-1">
+        <div class="panel panel-warning" style="margin-right: 10px;margin-top: 1px;">
+            <!-- Default panel contents -->
+            <div class="panel-heading">Active Calls</div>
+            <div class="panel-body">
+                <h1 class="text-danger text-center">{{ activeCalls }}</h1>
+            </div>
+        </div>
+        <div class="panel panel-warning" style="margin-right: 10px;margin-top: 1px;">
+            <!-- Default panel contents -->
+            <div class="panel-heading">Total Calls</div>
+            <div class="panel-body">
+                <h1 class="text-danger text-center">{{ peersTotalStatus.length }}</h1>
+            </div>
+        </div>
+        <div class="panel panel-success" style="margin-right: 10px;margin-top: 1px;">
+            <!-- Default panel contents -->
+            <div class="panel-heading">Answered</div>
+            <div class="panel-body">
+                <h1 class="text-success text-center">{{ todayAnsweredCalls }}</h1>
+            </div>
+        </div>
+        <div class="panel panel-danger" style="margin-right: 10px;margin-top: 1px;">
+            <!-- Default panel contents -->
+            <div class="panel-heading">No Answered</div>
+            <div class="panel-body">
+                <h1 class="text-danger text-center">{{ todayNoAnsweredCalls }}</h1>
+            </div>
+        </div>
+        <div class="panel panel-danger" style="margin-right: 10px;margin-top: 1px;">
+            <!-- Default panel contents -->
+            <div class="panel-heading">Failed</div>
+            <div class="panel-body">
+                <h1 class="text-danger text-center">{{ todayFailedCalls }}</h1>
+            </div>
+        </div>
+        <div class="panel panel-danger" style="margin-right: 10px;margin-top: 1px;">
+            <!-- Default panel contents -->
+            <div class="panel-heading">Busy</div>
+            <div class="panel-body">
+                <h1 class="text-danger text-center">{{ todayBusyCalls }}</h1>
+            </div>
         </div>
     </div>
 </div>
-
-
 </body>
