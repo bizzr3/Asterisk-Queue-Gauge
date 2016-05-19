@@ -1,18 +1,43 @@
 var app = angular.module('queueMonitor', []);
 
-
 app.controller('outBoundController', ['$scope', '$filter', function ($scope, $filter) {
     $scope.peerslist = [];
     $scope.trunks = [];
     $scope.peersTotalStatus = [];
     $scope.todayMissedCalls = 0;
     $scope.todayAnsweredCalls = 0;
+    $scope.todayTotalTalk = 0;
+    $scope.averageTotalTalk = 0;
+    $scope.activeCalls = 0;
+    $scope.teams = {
+        fresh_a: [2148, 2130, 2046, 2122, 2080, 2124, 2116, 2146, 2101, 2182, 2040],
+        fresh_b: [2154, 2028, 2069, 2053, 2134, 2164, 2075, 2038, 2058, 2147, 2152, 2063],
+        data_bank_a: [2067, 2171, 2060, 2181, 2115, 2168, 2001, 2151, 2135, 2004, 2128, 2102, 2170, 2166],
+        data_bank_b: [2023, 2141, 2167, 2165, 2132, 2119, 2120, 2155, 2145, 2113, 2190, 2192],
+        data_bank_c: [2006, 2002, 2094, 2195, 2144, 2005, 2022, 2071, 2123]
+    };
+
+    $scope.todayTotalCalls = 0;
+    $scope.todayAnsweredCalls = 0;
     $scope.todayNoAnsweredCalls = 0;
     $scope.todayFailedCalls = 0;
     $scope.todayBusyCalls = 0;
-    $scope.activeCalls = 0;
 
     var socket = io();
+
+
+    setInterval(function() {
+        var active_slide = $('.table-slider li.active');
+        if (active_slide.next().length == 0) {
+            active_slide.removeClass('active');
+            $('.table-slider li:first-child').addClass('active');
+        } else {
+            active_slide
+                .removeClass('active')
+                .next()
+                .addClass('active');
+        }
+    },20000);
 
     socket.emit('peers.getList');
 
@@ -26,44 +51,82 @@ app.controller('outBoundController', ['$scope', '$filter', function ($scope, $fi
         });
     });
 
-    socket.on('peers.totalStats', function (data) {
+    socket.on('peers.totalCalls', function (data) {
         $scope.$apply(function () {
-            $scope.peersTotalStatus = data;
-            $scope.todayAnsweredCalls = 0;
-            $scope.todayNoAnsweredCalls = 0;
-            $scope.todayFailedCalls = 0;
-            $scope.todayBusyCalls = 0;
+            $scope.todayTotalCalls = data;
+        });
+    });
 
-            $scope.peersTotalStatus.filter(function (obj, index) {
-                if (/ANSWERED/.test(obj.disposition)) {
-                    $scope.todayAnsweredCalls++;
-                } else if (/NO ANSWER/.test(obj.disposition)) {
-                    $scope.todayNoAnsweredCalls++;
-                } else if (/FAILED/.test(obj.disposition)) {
-                    $scope.todayFailedCalls++;
-                } else if (/BUSY/.test(obj.disposition)) {
-                    $scope.todayBusyCalls++;
-                }
+    socket.on('peers.answeredCalls', function (data) {
+        $scope.$apply(function () {
+            $scope.todayAnsweredCalls = data;
+        });
+    });
+
+    socket.on('peers.agentsTotalTalks', function (data) {
+        $scope.$apply(function () {
+            $scope.todayTotalTalk = $scope.secondToTime(data[0].totalTalkTime);
+
+        });
+    });
+
+    socket.on('peers.averageTalkTime', function (data) {
+        $scope.$apply(function () {
+            $scope.averageTotalTalk = $scope.secondToTime(data[0].averageTalkTime);
+
+        });
+    });
+
+
+    socket.on('peers.agentsTotalCalls', function (data) {
+        $scope.$apply(function () {
+            data.forEach(function (item) {
+                $scope.peerslist[$('.' + item.src).attr('list-index')].total_calls = item.count;
             });
-            $scope.peerslist.filter(function (obj, index) {
-                var totalCalls = 0, totaltalk = 0,noanswered = 0 ,answered = 0, busy = 0, failed = 0;
+        });
+    });
 
-                var agentItems = $filter('filter')($scope.peersTotalStatus, {src: obj.extension});
-                totalCalls = agentItems.length;
+    socket.on('peers.agentsAnsweredStats', function (data) {
+        $scope.$apply(function () {
+            data.forEach(function (item) {
+                var index_ = $('.' + item.src).attr('list-index');
+                var totalCalls_ = $scope.peerslist[index_].total_calls;
+                var responseRate = item.count / totalCalls_;
 
-                agentItems.forEach(function (item) {
-                    /ANSWERED/.test(item.disposition) && (answered +=1);
-                    /NO ANSWER/.test(item.disposition) && (noanswered +=1);
-                    /BUSY/.test(item.disposition) && (busy +=1);
-                    /FAILED/.test(item.disposition) && (failed +=1);
-                });
+                $scope.peerslist[index_].answered_calls = item.count;
+                $scope.peerslist[index_].response_rate = responseRate;
+            });
+        });
+    });
 
-                $scope.peerslist[index].total_calls = totalCalls;
-                $scope.peerslist[index].answered_calls = answered;
-                $scope.peerslist[index].no_answered_calls = noanswered;
-                $scope.peerslist[index].failed_calls = failed;
-                $scope.peerslist[index].busy_calls = busy;
-                $scope.peerslist[index].response_rate = totalCalls / answered;
+    socket.on('peers.TotalTalks', function (data) {
+        $scope.$apply(function () {
+            data.forEach(function (item) {
+                $scope.peerslist[$('.' + item.src).attr('list-index')].totalTalk = $scope.secondToTime(item.totalTalkTime);
+            });
+        });
+    });
+
+    socket.on('peers.averageTalk', function (data) {
+        $scope.$apply(function () {
+            data.forEach(function (item) {
+                $scope.peerslist[$('.' + item.src).attr('list-index')].averageTalk = $scope.secondToTime(item.averageTalkTime);
+            });
+        });
+    });
+
+    socket.on('peers.agentsBusyStats', function (data) {
+        $scope.$apply(function () {
+            data.forEach(function (item) {
+                $scope.peerslist[$('.' + item.src).attr('list-index')].busy_calls = item.count;
+            });
+        });
+    });
+
+    socket.on('peers.agentsFailedStats', function (data) {
+        $scope.$apply(function () {
+            data.forEach(function (item) {
+                $scope.peerslist[$('.' + item.src).attr('list-index')].failed_calls = item.count;
             });
         });
     });
@@ -74,14 +137,15 @@ app.controller('outBoundController', ['$scope', '$filter', function ($scope, $fi
         return true;
     };
 
-    $scope.getProgressColorClass = function(value) {
+    $scope.getProgressColorClass = function (value) {
+        value *= 100;
         if (value < 10) {
-           return 'progress-bar-danger';
-        } else if (value > 10 && value < 40) {
+            return 'progress-bar-danger';
+        } else if (value >= 10 && value <= 40) {
             return 'progress-bar-warning';
-        } else  if (value > 40 && value < 70) {
+        } else if (value >= 40 && value <= 70) {
             return 'progress-bar-info';
-        } else  if (value > 70) {
+        } else if (value >= 70) {
             return 'progress-bar-success';
         }
     };
@@ -119,7 +183,9 @@ app.controller('outBoundController', ['$scope', '$filter', function ($scope, $fi
             $scope.peerslist.filter(function (obj, index) {
                 $scope.$apply(function () {
                     if (!/OK/.test(itemToUpdate[index].status)) {
-                        $scope.peerslist[$('.' + itemToUpdate[index].objectname).attr('list-index')].status = itemToUpdate[index].status;
+                        try {
+                            $scope.peerslist[$('.' + itemToUpdate[index].objectname).attr('list-index')].status = itemToUpdate[index].status;
+                        } catch(ex) {}
                     }
                 });
             });
@@ -138,10 +204,23 @@ app.controller('outBoundController', ['$scope', '$filter', function ($scope, $fi
             seconds = seconds < 10 ? "0" + seconds : seconds;
 
             timer++;
-            target.text(minutes + ":" + seconds);
+            target.text('(' + minutes + ":" + seconds + ')');
         }, 1000);
         target.attr('timerID', timerId);
     };
+
+    $scope.secondToTime = function (time) {
+        var sec_num = parseInt(time, 10);
+        var hours   = Math.floor(sec_num / 3600);
+        var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+        var seconds = sec_num - (hours * 3600) - (minutes * 60);
+
+        if (hours   < 10) {hours   = "0" + hours;}
+        if (minutes < 10) {minutes = "0" + minutes;}
+        if (seconds < 10) {seconds = "0" + seconds;}
+        return hours + ':' + minutes + ':' + seconds;
+    };
+
 }]);
 
 app.controller('QueueController', ['$scope', function ($scope) {
@@ -468,3 +547,4 @@ app.controller('QueueController', ['$scope', function ($scope) {
 
     }));
 }]);
+

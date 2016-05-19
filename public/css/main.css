@@ -93,3 +93,26 @@
     float: left;
     margin-right: 5px
 }
+
+ul.table-slider {
+    list-style: none;
+    position: relative;
+
+}
+
+ul.table-slider li {
+    position: absolute;
+    left: 3%;
+    width: 90%;
+    transition: 1s;
+    opacity: 0;
+}
+
+ul.table-slider li.active {
+    left:5%;
+    opacity: 1;
+}
+
+table {
+    font-size: 15px
+}

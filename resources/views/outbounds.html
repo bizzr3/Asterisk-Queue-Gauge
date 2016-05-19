@@ -24,11 +24,11 @@
             <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
                     data-target="#bs-example-navbar-collapse-9" aria-expanded="false"><span class="sr-only">Toggle navigation</span>
                 <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span></button>
-            <a class="navbar-brand" href="#">Eagle Eye v0.1</a></div>
+            <a class="navbar-brand" href="#">Rabbit CDR</a></div>
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-9">
             <ul class="nav navbar-nav">
                 <li><a href="/">Inbound</a></li>
-                <li class="active"><a href="/out">Outbound</a></li>
+                <li class="active"><a href="/">Dashboard</a></li>
                 <li><a href="/reports">Report</a></li>
                 <li><a href="/users">User Manager</a></li>
                 <li class="pull-right"><a href="/exit">Log out</a></li>
@@ -37,47 +37,337 @@
     </div>
 </nav>
 <div class="row" ng-controller="outBoundController">
-    <div class="col-lg-11">
-        <div class="row agent-tile-holder">
-            <div class="agent-tile {{ peer.extension }}" list-index="{{$index}}"
-                 ng-show="printFilters(peer.name) && peer.status != 'UNKNOWN' && peer.status != 'UNREACHABLE'
-                 && peer.extension != '2032' && peer.extension != '2031' && peer.extension != '2010'"
-                 ng-repeat="peer in peerslist track by $index">
-                <h6>
-                    <i style="margin-top: -2px" ng-show="peer.status == 'In a call'"
-                       class="circle-status status-ringing blink"></i>
-                    <i style="margin-top: -2px" ng-show="peer.status != 'UNKNOWN' && peer.status != 'In a call'"
-                       class="circle-status status-not-inuse"></i>
-                    <i style="margin-top: -2px" ng-show="peer.status == 'UNKNOWN'"
-                       class="circle-status status-unavail"></i>
-                    <span style="font-size: 10px">{{ peer.name + ' (' + peer.extension + ')' }}</span>
-                </h6>
-                <h4></h4>
-                <h6>Status: {{ peer.status.length ? peer.status + ' (' + peer.destination + ') ' : 'Idle'}} <span
-                        id="{{ peer.extension }}"></span></h6>
+    <div class="col-lg-10">
+        <ul class="table-slider">
+            <li class="active">
+                <div class="panel panel-success agent-tile-holder">
+                    <div class="panel-heading">Fresh A</div>
+                    <div class="panel-body">
+                        <table class="table table-striped">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Extension</th>
+                                <th>Status</th>
+                                <th>Response Rate</th>
+                                <th>Talking to</th>
+                                <th>Total Calls</th>
+                                <th>Answered</th>
+                                <th>Failed</th>
+                                <th>Total Talk Time</th>
+                                <th>Average Talk Time</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr class="{{ peer.extension }}" list-index="{{$index}}"
+                                ng-repeat="peer in peerslist" ng-if="teams.fresh_a.indexOf(peer.extension *1) >= 0">
 
-                <div style="font-size:13px;">
-                    <div class="pull-left">Rate:</div>
-                    <div class="progress pull-left"
-                         style="height: 10px;width:100px;margin-top:5px;margin-left:5px;margin-right:5px">
-                        <div class="progress-bar {{ getProgressColorClass(peer.response_rate) }}" role="progressbar"
-                             aria-valuenow="{{ peer.response_rate }}"
-                             aria-valuemin="0" aria-valuemax="100" style="width:{{ peer.response_rate }}%">
-                        </div>
+                                <td><h5>{{ peer.name.substring(0,peer.name.indexOf(' ')) }}</h5></td>
+
+                                <td>{{ peer.extension }}</td>
+
+                                <td style="font-size: 12px" width="12%">
+                                    <i style="margin-top: -2px" ng-show="peer.status == 'In a call'"
+                                       class="circle-status status-ringing blink"></i>
+                                    <i style="margin-top: -2px"
+                                       ng-show="peer.status != 'UNKNOWN' && peer.status != 'UNREACHABLE' && peer.status != 'In a call'"
+                                       class="circle-status status-not-inuse"></i>
+                                    <i style="margin-top: -2px" ng-show="peer.status == 'UNREACHABLE'"
+                                       class="circle-status status-busy"></i>
+                                    <i style="margin-top: -2px" ng-show="peer.status == 'UNKNOWN'"
+                                       class="circle-status status-unavail"></i>
+
+                                    <div>{{ peer.status.length ? peer.status : 'Ready'}}</div>
+                                </td>
+                                <td width="20%">
+                                    <div class="progress pull-left"
+                                         style="height: 10px;width:100px;margin-top:5px;margin-left:5px;margin-right:5px">
+                                        <div class="progress-bar {{ getProgressColorClass(peer.response_rate) }}"
+                                             role="progressbar"
+                                             aria-valuenow="{{ peer.response_rate * 100 }}"
+                                             style="width:{{ peer.response_rate * 100 }}%">
+                                        </div>
+                                    </div>
+                                    <div style="font-size: 12px;padding-top: 4px;"><b>{{peer.response_rate ?
+                                        (peer.response_rate *100 | number:2) : 0 }}%</b></div>
+                                </td>
+                                <td width="15%">{{ peer.destination }} <span id="{{ peer.extension }}"></span></td>
+
+                                <td>{{ peer.total_calls ? peer.total_calls : 0 }}</td>
+                                <td>{{ peer.answered_calls ? peer.answered_calls : 0}}</td>
+                                <td>{{ peer.failed_calls ? peer.failed_calls : 0 }}</td>
+                                <td>{{ peer.totalTalk ? peer.totalTalk : '00:00:00' }}</td>
+                                <td>{{ peer.averageTalk ? peer.averageTalk : '00:00:00' }}</td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </div>
-                    <div style="font-size: 12px;padding-top: 4px;"><b>{{peer.response_rate | number:2}}%</b></div>
                 </div>
-                <br>
-                <ul class="agent-info-list">
-                    <li>Total: <b>{{ peer.total_calls }}</b>&nbsp;|</li>
-                    <li>Answered:<b>{{ peer.no_answered_calls }}</b>&nbsp;|</li>
-                    <li>No Answer:<b>{{ peer.answered_calls }}</b>&nbsp;|</li>
-                    <li>Failed: <b>{{ peer.failed_calls }}</b>&nbsp;|</li>
-                    <li>Busy: <b>{{ peer.busy_calls }}</b></li>
-                </ul>
-            </div>
-        </div>
+            </li>
+            <li>
+                <div class="panel panel-success agent-tile-holder">
+                    <div class="panel-heading">Fresh B</div>
+                    <div class="panel-body">
+                        <table class="table table-striped">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Extension</th>
+                                <th>Status</th>
+                                <th>Response Rate</th>
+                                <th>Talking to</th>
+                                <th>Total Calls</th>
+                                <th>Answered</th>
+                                <th>Failed</th>
+                                <th>Total Talk Time</th>
+                                <th>Average Talk Time</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr class="{{ peer.extension }}" list-index="{{$index}}"
+                                ng-repeat="peer in peerslist" ng-if="teams.fresh_b.indexOf(peer.extension *1) >= 0">
+
+                                <td><h5>{{ peer.name.substring(0,peer.name.indexOf(' ')) }}</h5></td>
+                                <td>{{ peer.extension }}</td>
+
+
+                                <td style="font-size: 12px" width="12%">
+                                    <i style="margin-top: -2px" ng-show="peer.status == 'In a call'"
+                                       class="circle-status status-ringing blink"></i>
+                                    <i style="margin-top: -2px"
+                                       ng-show="peer.status != 'UNKNOWN' && peer.status != 'UNREACHABLE' && peer.status != 'In a call'"
+                                       class="circle-status status-not-inuse"></i>
+                                    <i style="margin-top: -2px" ng-show="peer.status == 'UNREACHABLE'"
+                                       class="circle-status status-busy"></i>
+                                    <i style="margin-top: -2px" ng-show="peer.status == 'UNKNOWN'"
+                                       class="circle-status status-unavail"></i>
+
+                                    <div>{{ peer.status.length ? peer.status : 'Ready'}}</div>
+                                </td>
+                                <td width="15%">
+                                    <div class="progress pull-left"
+                                         style="height: 10px;width:100px;margin-top:5px;margin-left:5px;margin-right:5px">
+                                        <div class="progress-bar {{ getProgressColorClass(peer.response_rate) }}"
+                                             role="progressbar"
+                                             aria-valuenow="{{ peer.response_rate * 100 }}"
+                                             style="width:{{ peer.response_rate * 100 }}%">
+                                        </div>
+                                    </div>
+                                    <div style="font-size: 12px;padding-top: 4px;"><b>{{peer.response_rate ?
+                                        (peer.response_rate *100 | number:2) : 0 }}%</b></div>
+                                </td>
+                                <td width="20%">{{ peer.destination }} <span id="{{ peer.extension }}"></span></td>
+
+                                <td>{{ peer.total_calls ? peer.total_calls : 0 }}</td>
+                                <td>{{ peer.answered_calls ? peer.answered_calls : 0}}</td>
+                                <td>{{ peer.failed_calls ? peer.failed_calls : 0 }}</td>
+                                <td>{{ peer.totalTalk ? peer.totalTalk : '00:00:00' }}</td>
+                                <td>{{ peer.averageTalk ? peer.averageTalk : '00:00:00' }}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </li>
+            <li>
+                <div class="panel panel-success agent-tile-holder">
+                    <div class="panel-heading">Data Bank A</div>
+                    <div class="panel-body">
+                        <table class="table table-striped">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Extension</th>
+                                <th>Status</th>
+                                <th>Response Rate</th>
+                                <th>Talking to</th>
+                                <th>Total Calls</th>
+                                <th>Answered</th>
+                                <th>Failed</th>
+                                <th>Total Talk Time</th>
+                                <th>Average Talk Time</th>
+
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr class="{{ peer.extension }}" list-index="{{$index}}"
+                                ng-repeat="peer in peerslist"
+                                ng-if="teams.data_bank_a.indexOf(peer.extension *1) >= 0">
+
+                                <td><h5>{{ peer.name.substring(0,peer.name.indexOf(' ')) }}</h5></td>
+                                <td>{{ peer.extension }}</td>
+
+                                <td style="font-size: 12px" width="12%">
+                                    <i style="margin-top: -2px" ng-show="peer.status == 'In a call'"
+                                       class="circle-status status-ringing blink"></i>
+                                    <i style="margin-top: -2px"
+                                       ng-show="peer.status != 'UNKNOWN' && peer.status != 'UNREACHABLE' && peer.status != 'In a call'"
+                                       class="circle-status status-not-inuse"></i>
+                                    <i style="margin-top: -2px" ng-show="peer.status == 'UNREACHABLE'"
+                                       class="circle-status status-busy"></i>
+                                    <i style="margin-top: -2px" ng-show="peer.status == 'UNKNOWN'"
+                                       class="circle-status status-unavail"></i>
+
+                                    <div>{{ peer.status.length ? peer.status : 'Ready'}}</div>
+                                </td>
+                                <td width="20%">
+                                    <div class="progress pull-left"
+                                         style="height: 10px;width:100px;margin-top:5px;margin-left:5px;margin-right:5px">
+                                        <div class="progress-bar {{ getProgressColorClass(peer.response_rate) }}"
+                                             role="progressbar"
+                                             aria-valuenow="{{ peer.response_rate * 100 }}"
+                                             style="width:{{ peer.response_rate * 100 }}%">
+                                        </div>
+                                    </div>
+                                    <div style="font-size: 12px;padding-top: 4px;"><b>{{peer.response_rate ?
+                                        (peer.response_rate *100 | number:2) : 0 }}%</b></div>
+                                </td>
+                                <td width="15%">{{ peer.destination }} <span id="{{ peer.extension }}"></span></td>
+
+                                <td>{{ peer.total_calls ? peer.total_calls : 0 }}</td>
+                                <td>{{ peer.answered_calls ? peer.answered_calls : 0}}</td>
+                                <td>{{ peer.failed_calls ? peer.failed_calls : 0 }}</td>
+                                <td>{{ peer.totalTalk ? peer.totalTalk : '00:00:00' }}</td>
+                                <td>{{ peer.averageTalk ? peer.averageTalk : '00:00:00' }}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </li>
+            <li>
+                <div class="panel panel-success agent-tile-holder">
+                    <div class="panel-heading">Data Bank B</div>
+                    <div class="panel-body">
+                        <table class="table table-striped">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Extension</th>
+                                <th>Status</th>
+                                <th>Response Rate</th>
+                                <th>Talking to</th>
+                                <th>Total Calls</th>
+                                <th>Answered</th>
+                                <th>Failed</th>
+                                <th>Total Talk Time</th>
+                                <th>Average Talk Time</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr class="{{ peer.extension }}" list-index="{{$index}}"
+                                ng-repeat="peer in peerslist"
+                                ng-if="teams.data_bank_b.indexOf(peer.extension *1) >= 0">
+
+                                <td><h5>{{ peer.name.substring(0,peer.name.indexOf(' ')) }}</h5></td>
+                                <td>{{ peer.extension }}</td>
+
+                                <td style="font-size: 12px" width="12%">
+                                    <i style="margin-top: -2px" ng-show="peer.status == 'In a call'"
+                                       class="circle-status status-ringing blink"></i>
+                                    <i style="margin-top: -2px"
+                                       ng-show="peer.status != 'UNKNOWN' && peer.status != 'UNREACHABLE' && peer.status != 'In a call'"
+                                       class="circle-status status-not-inuse"></i>
+                                    <i style="margin-top: -2px" ng-show="peer.status == 'UNREACHABLE'"
+                                       class="circle-status status-busy"></i>
+                                    <i style="margin-top: -2px" ng-show="peer.status == 'UNKNOWN'"
+                                       class="circle-status status-unavail"></i>
+
+                                    <div>{{ peer.status.length ? peer.status : 'Ready'}}</div>
+                                </td>
+                                <td width="20%">
+                                    <div class="progress pull-left"
+                                         style="height: 10px;width:100px;margin-top:5px;margin-left:5px;margin-right:5px">
+                                        <div class="progress-bar {{ getProgressColorClass(peer.response_rate) }}"
+                                             role="progressbar"
+                                             aria-valuenow="{{ peer.response_rate * 100 }}"
+                                             style="width:{{ peer.response_rate * 100 }}%">
+                                        </div>
+                                    </div>
+                                    <div style="font-size: 12px;padding-top: 4px;"><b>{{peer.response_rate ?
+                                        (peer.response_rate *100 | number:2) : 0 }}%</b></div>
+                                </td>
+                                <td width="15%">{{ peer.destination }} <span id="{{ peer.extension }}"></span></td>
+
+                                <td>{{ peer.total_calls ? peer.total_calls : 0 }}</td>
+                                <td>{{ peer.answered_calls ? peer.answered_calls : 0}}</td>
+                                <td>{{ peer.failed_calls ? peer.failed_calls : 0 }}</td>
+                                <td>{{ peer.totalTalk ? peer.totalTalk : '00:00:00' }}</td>
+                                <td>{{ peer.averageTalk ? peer.averageTalk : '00:00:00' }}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </li>
+            <li>
+                <div class="panel panel-success agent-tile-holder">
+                    <div class="panel-heading">Data Bank C</div>
+                    <div class="panel-body">
+                        <table class="table table-striped">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Extension</th>
+                                <th>Status</th>
+                                <th>Response Rate</th>
+                                <th>Talking to</th>
+                                <th>Total Calls</th>
+                                <th>Answered</th>
+                                <th>Failed</th>
+                                <th>Total Talk Time</th>
+                                <th>Average Talk Time</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr class="{{ peer.extension }}" list-index="{{$index}}"
+                                ng-repeat="peer in peerslist"
+                                ng-if="teams.data_bank_c.indexOf(peer.extension *1) >= 0">
+
+                                <td><h5>{{ peer.name.substring(0,peer.name.indexOf(' ')) }}</h5></td>
+                                <td>{{ peer.extension }}</td>
+
+                                <td style="font-size: 12px" width="12%">
+                                    <i style="margin-top: -2px" ng-show="peer.status == 'In a call'"
+                                       class="circle-status status-ringing blink"></i>
+                                    <i style="margin-top: -2px"
+                                       ng-show="peer.status != 'UNKNOWN' && peer.status != 'UNREACHABLE' && peer.status != 'In a call'"
+                                       class="circle-status status-not-inuse"></i>
+                                    <i style="margin-top: -2px" ng-show="peer.status == 'UNREACHABLE'"
+                                       class="circle-status status-busy"></i>
+                                    <i style="margin-top: -2px" ng-show="peer.status == 'UNKNOWN'"
+                                       class="circle-status status-unavail"></i>
+
+                                    <div>{{ peer.status.length ? peer.status : 'Ready'}}</div>
+                                </td>
+                                <td width="20%">
+                                    <div class="progress pull-left"
+                                         style="height: 10px;width:100px;margin-top:5px;margin-left:5px;margin-right:5px">
+                                        <div class="progress-bar {{ getProgressColorClass(peer.response_rate) }}"
+                                             role="progressbar"
+                                             aria-valuenow="{{ peer.response_rate * 100 }}"
+                                             style="width:{{ peer.response_rate * 100 }}%">
+                                        </div>
+                                    </div>
+                                    <div style="font-size: 12px;padding-top: 4px;"><b>{{peer.response_rate ?
+                                        (peer.response_rate *100 | number:2) : 0 }}%</b></div>
+                                </td>
+                                <td width="15%">{{ peer.destination }} <span id="{{ peer.extension }}"></span></td>
+
+                                <td>{{ peer.total_calls ? peer.total_calls : 0 }}</td>
+                                <td>{{ peer.answered_calls ? peer.answered_calls : 0}}</td>
+                                <td>{{ peer.failed_calls ? peer.failed_calls : 0 }}</td>
+                                <td>{{ peer.totalTalk ? peer.totalTalk : '00:00:00' }}</td>
+                                <td>{{ peer.averageTalk ? peer.averageTalk : '00:00:00' }}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </li>
+        </ul>
     </div>
+
     <div class="col-lg-1">
         <div class="panel panel-warning" style="margin-right: 10px;margin-top: 1px;">
             <!-- Default panel contents -->
@@ -90,7 +380,7 @@
             <!-- Default panel contents -->
             <div class="panel-heading">Total Calls</div>
             <div class="panel-body">
-                <h1 class="text-danger text-center">{{ peersTotalStatus.length }}</h1>
+                <h1 class="text-danger text-center">{{ todayTotalCalls }}</h1>
             </div>
         </div>
         <div class="panel panel-success" style="margin-right: 10px;margin-top: 1px;">
@@ -100,25 +390,18 @@
                 <h1 class="text-success text-center">{{ todayAnsweredCalls }}</h1>
             </div>
         </div>
-        <div class="panel panel-danger" style="margin-right: 10px;margin-top: 1px;">
+        <div class="panel panel-success" style="margin-right: 10px;margin-top: 1px;">
             <!-- Default panel contents -->
-            <div class="panel-heading">No Answered</div>
+            <div class="panel-heading">Average Talk</div>
             <div class="panel-body">
-                <h1 class="text-danger text-center">{{ todayNoAnsweredCalls }}</h1>
+                <h3 class="text-danger text-center">{{ averageTotalTalk }}</h3>
             </div>
         </div>
-        <div class="panel panel-danger" style="margin-right: 10px;margin-top: 1px;">
+        <div class="panel panel-primary" style="margin-right: 10px;margin-top: 1px;">
             <!-- Default panel contents -->
-            <div class="panel-heading">Failed</div>
+            <div class="panel-heading">Total Talk</div>
             <div class="panel-body">
-                <h1 class="text-danger text-center">{{ todayFailedCalls }}</h1>
-            </div>
-        </div>
-        <div class="panel panel-danger" style="margin-right: 10px;margin-top: 1px;">
-            <!-- Default panel contents -->
-            <div class="panel-heading">Busy</div>
-            <div class="panel-body">
-                <h1 class="text-danger text-center">{{ todayBusyCalls }}</h1>
+                <h3 class="text-danger text-center">{{ todayTotalTalk }}</h3>
             </div>
         </div>
     </div>
