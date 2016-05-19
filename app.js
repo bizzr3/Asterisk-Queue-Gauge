@@ -8,6 +8,7 @@ var AST_TAG = '[ASTERISK]';
 //var CronJob = require('cron').CronJob;
 var mysql = require('mysql');
 var outbound = false;
+var tunnel = require('tunnel-ssh');
 
 var ami = new require('asterisk-manager')(
     global.asteriskConnection.port,
@@ -34,17 +35,36 @@ app.get('/', function (req, res) {
 
 app.get('/out', function (req, res) {
     res.sendFile(__dirname + '/resources/views/outbounds.html');
-    cdrDatabaseConnection = mysql.createConnection({
-        host: '127.0.0.1',
-        user: 'asteriskuser',
-        password: 'amp109',
-        database: 'asteriskcdrdb'
+    var config = {
+        host: '10.59.0.13',
+        username: 'root',
+        dstPort: 3306,
+        localPort: 3000,
+        password:'4skH4num4n!'
+    };
+
+    logger.log('SSH TUNNEL', 'Making tunnel to mysql server ...', 'warn');
+    tunnel(config, function (error, result) {
+        if (error) {
+            logger.log('[SSH TUNNEL]', error.stack, 'fatal');
+        } else {
+            logger.log('[SSH TUNNEL]', 'Tunnel Established', 'info');
+            cdrDatabaseConnection = mysql.createConnection({
+                host: '127.0.0.1',
+                user: 'asteriskuser',
+                password: 'amp109',
+                database: 'asteriskcdrdb',
+                port: 3000
+            });
+
+            cdrDatabaseConnection.connect(function (err) {
+                if (err) console.log(err.stack);
+                logger.log('[MYSQL]', 'Connected to server.', 'info');
+            });
+            checkAgentStatus();
+        }
     });
 
-    cdrDatabaseConnection.connect(function (err) {
-        if (err) console.log(err.stack);
-    });
-    checkAgentStatus();
 });
 
 //Start
@@ -120,7 +140,8 @@ io.sockets.on('connection', function (socket) {
             host: '127.0.0.1',
             user: 'asteriskuser',
             password: 'amp109',
-            database: 'asterisk'
+            database: 'asterisk',
+            port: 3000
         });
 
         databaseConnection.connect(function (err) {
