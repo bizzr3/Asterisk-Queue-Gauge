@@ -14,7 +14,7 @@ app.controller('outBoundController', ['$scope', '$filter', function ($scope, $fi
         fresh_b: [2154, 2028, 2069, 2053, 2134, 2164, 2075, 2038, 2058, 2147, 2152, 2063],
         data_bank_a: [2067, 2171, 2060, 2181, 2115, 2168, 2001, 2151, 2135, 2004, 2128, 2102, 2170, 2166],
         data_bank_b: [2023, 2141, 2167, 2165, 2132, 2119, 2120, 2155, 2145, 2113, 2190, 2192],
-        data_bank_c: [2006, 2002, 2094, 2195, 2144, 2005, 2022, 2071, 2123]
+        data_bank_c: [2006, 2002, 2094, 2195, 2144, 2005, 2022, 2071, 2123, 2194]
     };
 
     $scope.todayTotalCalls = 0;
@@ -37,7 +37,7 @@ app.controller('outBoundController', ['$scope', '$filter', function ($scope, $fi
                 .next()
                 .addClass('active');
         }
-    },20000);
+    },2000);
 
     socket.emit('peers.getList');
 
