@@ -52,7 +52,7 @@ app.get('/out', function (req, res) {
             cdrDatabaseConnection = mysql.createConnection({
                 host: '127.0.0.1',
                 user: 'asteriskuser',
-                password: 'amp109',
+                password: 'tech@1100',
                 database: 'asteriskcdrdb',
                 port: 3000
             });
@@ -139,15 +139,17 @@ io.sockets.on('connection', function (socket) {
         var databaseConnection = mysql.createConnection({
             host: '127.0.0.1',
             user: 'asteriskuser',
-            password: 'amp109',
+            password: 'tech@1100',
             database: 'asterisk',
             port: 3000
         });
 
         databaseConnection.connect(function (err) {
+            console.log('getting peers list',err);
             if (err) return;
 
             databaseConnection.query("select * from users where extension in(" + global.activeAgentsList + ")", function (error, users) {
+                console.log(error);
                 io.emit('peers.list', users);
             });
         });
