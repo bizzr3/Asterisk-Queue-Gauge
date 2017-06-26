@@ -225,5 +225,5 @@ var checkAgentStatus = function () {
         io.emit('peers.averageTalk', agentsAnsweredStats);
     });
 
-    setTimeout(checkAgentStatus, 10000);
+    setTimeout(checkAgentStatus, 60000);
 };
