@@ -37,7 +37,7 @@ app.controller('outBoundController', ['$scope', '$filter', function ($scope, $fi
                 .next()
                 .addClass('active');
         }
-    },2000);
+    },10000);
 
     socket.emit('peers.getList');
 
