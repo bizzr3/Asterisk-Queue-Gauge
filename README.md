@@ -1,2 +1,2 @@
 # Asterisk-Queue-Gauge
-Display Number of members in the queue of asterisk.
+A fast Voice Recording player for asterisk Sip Server 
